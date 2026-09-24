@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0f4c81">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RelaisZ">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="style.css">
+<title>RelaisZ</title>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">RelaisZ <small id="hdr-class"></small></div>
+  <nav class="tabs">
+    <button data-view="tiles" class="tab">Passage</button>
+    <button data-view="results" class="tab">Résultats</button>
+    <button data-view="classes" class="tab">Classes</button>
+    <button data-view="settings" class="tab" aria-label="Réglages">⚙︎</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ============ CLASSES / IMPORT ============ -->
+  <section id="v-classes" class="view">
+    <h2>Importer une classe</h2>
+    <div class="card">
+      <label class="field">Nom de la classe
+        <input id="imp-name" type="text" placeholder="ex : 2nde 4" autocomplete="off">
+      </label>
+      <p class="hint">Fichier <b>XLSX</b> ou <b>CSV</b> : « NOM Prénom » en colonne A, <i>ou</i> Nom en colonne A et Prénom en colonne B. Une colonne <b>Genre</b> (F / G) est reconnue automatiquement ; sinon, indiquez-le élève par élève dans l'aperçu. Une ligne d'en-tête éventuelle est ignorée.</p>
+      <label class="btn primary file-btn">Choisir le fichier…
+        <input id="imp-file" type="file" accept=".xlsx,.xls,.csv,.txt,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+      </label>
+      <div id="imp-preview"></div>
+    </div>
+
+    <h2>Mes classes</h2>
+    <div id="class-list" class="list"></div>
+  </section>
+
+  <!-- ============ TUILES ÉLÈVES ============ -->
+  <section id="v-tiles" class="view">
+    <div class="sel-bar">
+      <div class="sel-slot" id="slot-d"><span class="role d">D</span><span class="who">Touchez le démarreur</span></div>
+      <div class="arrow">➜</div>
+      <div class="sel-slot" id="slot-r"><span class="role r">R</span><span class="who">puis le relayeur</span></div>
+      <button id="sel-clear" class="btn ghost small">Effacer</button>
+    </div>
+    <div id="tiles" class="tiles"></div>
+    <div class="tiles-foot">
+      <button id="cfg-line" class="btn ghost small" onclick="show('settings')"></button>
+      <button id="add-student" class="btn ghost small">+ Ajouter un élève</button>
+    </div>
+  </section>
+
+  <!-- ============ CHRONO ============ -->
+  <section id="v-chrono" class="view">
+    <div class="pair">
+      <div><span class="role d">D</span> <b id="c-d"></b></div>
+      <button id="c-swap" class="btn ghost small">⇄ Inverser</button>
+      <div><span class="role r">R</span> <b id="c-r"></b></div>
+    </div>
+
+    <div class="clock" id="clock">0,00</div>
+
+    <div class="splits">
+      <div class="split"><span>Entrée Zt</span><b id="s1">–</b></div>
+      <div class="split zt"><span>Temps dans Zt</span><b id="s2">–</b></div>
+      <div class="split"><span>Temps total</span><b id="s3">–</b></div>
+    </div>
+
+    <div class="chrono-btns">
+      <button class="cbtn" data-step="0">Début</button>
+      <button class="cbtn" data-step="1">Entrée Zt</button>
+      <button class="cbtn" data-step="2">Fin Zt</button>
+      <button class="cbtn" data-step="3">Fin de course</button>
+    </div>
+
+    <div class="row gap center">
+      <button id="c-undo" class="btn ghost">↶ Annuler le dernier top</button>
+      <button id="c-reset" class="btn ghost">Recommencer</button>
+      <button id="c-cancel" class="btn danger-ghost">Abandonner</button>
+    </div>
+  </section>
+
+  <!-- ============ ÉVALUATION ============ -->
+  <section id="v-eval" class="view">
+    <div class="pair">
+      <div><span class="role d">D</span> <b id="e-d"></b></div>
+      <div><span class="role r">R</span> <b id="e-r"></b></div>
+    </div>
+    <div id="e-times" class="card times"></div>
+
+    <div class="card crit" id="q1">
+      <h3>1. Transmission valable (main de transmission) ?</h3>
+      <div class="yn">
+        <button class="btn yes" data-q="main" data-v="1">Oui <small>+3</small></button>
+        <button class="btn no" data-q="main" data-v="0">Non <small>0</small></button>
+      </div>
+    </div>
+
+    <div class="card crit hidden" id="q2">
+      <h3>2. Le relayeur ne se retourne pas ?</h3>
+      <div class="yn">
+        <button class="btn yes" data-q="noTurn" data-v="1">Oui, ne se retourne pas <small>+3</small></button>
+        <button class="btn no" data-q="noTurn" data-v="0">Se retourne <small>0</small></button>
+      </div>
+    </div>
+
+    <div class="card crit hidden" id="q3">
+      <h3>3. Vitesse dans la Zt vs reste du parcours</h3>
+      <div id="speed-box"></div>
+    </div>
+
+    <div class="card total hidden" id="e-total"></div>
+
+    <div class="row gap center">
+      <button id="e-save" class="btn primary big hidden">Valider le passage</button>
+      <button id="e-cancel" class="btn danger-ghost">Annuler ce passage</button>
+    </div>
+  </section>
+
+  <!-- ============ RÉSULTATS ============ -->
+  <section id="v-results" class="view">
+    <div class="row between wrap">
+      <h2>Résultats <small id="r-class"></small></h2>
+      <div class="row gap">
+        <button id="exp-xlsx" class="btn primary small">Exporter XLSX</button>
+        <button id="exp-csv" class="btn ghost small">CSV</button>
+      </div>
+    </div>
+    <div class="card row gap wrap">
+      <b>Nombre de courses retenues :</b>
+      <div class="seg" id="nbpass"><button data-n="3">3</button><button data-n="4">4</button><button data-n="5">5</button></div>
+      <span class="hint" style="margin:0">recalcul automatique</span>
+    </div>
+    <p class="hint">Chaque course est notée <b>/20</b> = <b>critères /10</b> (main, ne se retourne pas, vitesse dans la Zt) + <b>performance /10</b> (barème fixe /5 selon le genre + autoréférencé /5). Dans chaque case : note /20, puis <small>critères | perf.</small> <b>Note /20</b> = moyenne des meilleures courses sur le nombre choisi (course manquante = 0 ; courses non retenues grisées). Touchez une course pour le détail / suppression, et la colonne G pour changer le genre.</p>
+    <div id="r-warn"></div>
+    <div class="table-wrap"><table id="r-table"></table></div>
+
+    <h2 id="r-fixed-title">Barème fixe /5</h2>
+    <div class="card" id="r-fixed"></div>
+
+    <h2>Barème autoréférencé /5</h2>
+    <div class="card" id="r-scale"></div>
+
+    <h2>Historique des passages</h2>
+    <div id="r-hist" class="list"></div>
+  </section>
+
+  <!-- ============ RÉGLAGES ============ -->
+  <section id="v-settings" class="view">
+    <h2>Réglages</h2>
+    <div class="card">
+      <label class="field">Distance totale (60 à 100 m)<select id="set-total"></select></label>
+      <label class="field">Longueur zone de transmission (20 à 30 m)<select id="set-zt"></select></label>
+      <p class="hint">Le barème fixe (établi sur 100 m) est proratisé à la distance choisie. Les courses déjà enregistrées gardent la distance à laquelle elles ont été courues.</p>
+      <p class="hint">Vitesse Zt = longueur Zt ÷ temps dans la Zt. Vitesse hors Zt = (distance totale − Zt) ÷ (temps total − temps Zt). Écart = (V Zt − V hors Zt) ÷ V hors Zt.</p>
+      <label class="field">Note minimale autoréférencée (moins bonne course de la classe, /5)<input id="set-floor" type="number" inputmode="decimal" min="0" max="4.5" step="0.5"></label>
+      <p class="hint">Barème autoréférencé : meilleure course de la classe = 5, moins bonne = note minimale (1 par défaut), linéaire entre les deux.</p>
+      <button id="set-save" class="btn primary">Enregistrer</button>
+    </div>
+
+    <h2>Notation d'une course (/20)</h2>
+    <div class="card">
+      <h3>Critères /10</h3>
+      <ul class="bareme">
+        <li>Transmission valable (main) : <b>3 pts</b></li>
+        <li>Ne se retourne pas : <b>3 pts</b></li>
+        <li>Écart de vitesse Zt / hors Zt :
+          <ul>
+            <li>plus rapide dans la Zt : <b>4 pts</b></li>
+            <li>vitesse proche (0 à −8 %) : <b>3 pts</b></li>
+            <li>vitesse correcte (−8,1 à −15 %) : <b>2 pts</b></li>
+            <li>vitesse faible (−15,1 à −20 %) : <b>1 pt</b></li>
+            <li>vitesse inférieure (au-delà de −20 %) : <b>0 pt</b></li>
+          </ul></li>
+      </ul>
+      <p class="hint">Les critères sont attribués au démarreur et au relayeur.</p>
+      <h3 style="margin-top:14px">Performance /10 (temps total du relais)</h3>
+      <ul class="bareme">
+        <li><b>Barème fixe /5</b> : barème relais 100 m du lycée, filles / garçons, proratisé à la distance courue (chaque élève est noté avec le barème de son genre).</li>
+        <li><b>Autoréférencé /5</b> : meilleure course de la classe = <b>5</b> · moins bonne = <b>1</b> · linéaire entre les deux.</li>
+      </ul>
+      <p class="hint"><b>Note finale /20</b> = somme des N meilleures courses ÷ N (N = 3, 4 ou 5, choisi dans Résultats ; course manquante = 0).</p>
+    </div>
+
+    <h2>Sauvegarde</h2>
+    <div class="card row gap wrap">
+      <button id="bk-export" class="btn ghost">Exporter une sauvegarde (.json)</button>
+      <label class="btn ghost file-btn">Restaurer une sauvegarde…<input id="bk-import" type="file" accept=".json,application/json" hidden></label>
+    </div>
+    <p class="hint">Les données restent sur l'iPad (stockage local). Pensez à exporter une sauvegarde régulièrement.</p>
+    <p class="credit">RelaisZ v1.3 · N'EPS · by Quentin Delisle</p>
+  </section>
+
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script src="vendor/xlsx.mini.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
